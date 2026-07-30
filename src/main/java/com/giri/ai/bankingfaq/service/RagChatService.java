@@ -18,7 +18,6 @@ public class RagChatService {
 
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
-    // swap for persistent store later
     private final ChatMemory chatMemory = MessageWindowChatMemory.builder()
             .chatMemoryRepository(new InMemoryChatMemoryRepository())
             .maxMessages(50)
@@ -35,10 +34,10 @@ public class RagChatService {
         """;
 
     public RagChatService(ChatClient.Builder builder, VectorStore vectorStore) {
+        this.vectorStore = vectorStore;
         this.chatClient = builder
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();
-        this.vectorStore = vectorStore;
     }
 
     public String chat(String conversationId, String userMessage) {
@@ -60,10 +59,11 @@ public class RagChatService {
         String response = chatClient.prompt()
                 .system(systemPrompt)
                 .user(userMessage)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .call()
                 .content();
 
-        // 3. Log for observability (do this from day one!)
+        // 3. Log for observability
         logInteraction(conversationId, userMessage, relevantDocs, response);
 
         return response;
