@@ -1,0 +1,8 @@
+Fixed Deposit Early Withdrawal Policy
+
+Customers may withdraw a Fixed Deposit (FD) before its maturity date subject to the following conditions:
+1. A penalty of 1% is deducted from the applicable interest rate for the period the deposit was held.
+2. FDs held for less than 7 days do not earn any interest and no penalty applies since the principal is simply returned.
+3. Premature withdrawal is not permitted on Tax-Saver FDs (5-year lock-in) except in case of the depositor's death.
+4. For joint accounts, either holder may request premature withdrawal unless "Either or Survivor" restrictions apply.
+5. Partial withdrawal is not permitted; the entire FD must be liquidated.

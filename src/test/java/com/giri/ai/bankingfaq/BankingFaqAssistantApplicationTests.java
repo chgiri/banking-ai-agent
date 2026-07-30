@@ -1,4 +1,4 @@
-package com.giri.ai.banking_faq_assistant;
+package com.giri.ai.bankingfaq;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

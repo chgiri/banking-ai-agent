@@ -1,0 +1,9 @@
+Standard Account Fee Schedule
+
+- Monthly minimum balance requirement: $500 for Savings, $1000 for Current accounts
+- Non-maintenance penalty: $15/month if balance falls below minimum
+- ATM withdrawal (own bank): Free, unlimited
+- ATM withdrawal (other bank): First 3 free per month, $2.50 thereafter
+- International transaction fee: 3% of transaction amount
+- Card replacement fee: $10 for standard, free for damaged chip issues
+- Stop payment on cheque: $25 per request

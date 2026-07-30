@@ -1,4 +1,4 @@
-package com.giri.ai.banking_faq_assistant;
+package com.giri.ai.bankingfaq;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

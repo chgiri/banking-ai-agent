@@ -31,3 +31,21 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Local/environment-specific config — never commit real credentials ###
+application-local.properties
+application-local.yml
+.env
+.env.*
+
+### Logs ###
+logs/
+*.log
+
+### Bruno — local-only environment files that may hold secrets/tokens ###
+bruno/.env
+bruno/environments/*.local.bru
