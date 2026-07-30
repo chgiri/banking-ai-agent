@@ -71,13 +71,12 @@ public class DocumentQnaService {
                 .distinct()
                 .toList();
 
-        logInteraction(question, relevantChunks, answer);
+        logInteraction(question, answer);
 
         return new ChatResult(answer, sources);
     }
 
-    private void logInteraction(String userMessage,
-                                List<Document> retrieved, String response) {
+    private void logInteraction(String userMessage, String response) {
         System.out.printf("""
             Question: %s
             Answer: %s
