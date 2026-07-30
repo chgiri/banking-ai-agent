@@ -3,8 +3,6 @@ package com.giri.ai.bankingfaq.service;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
-import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.SearchRequest;
@@ -18,10 +16,6 @@ public class RagChatService {
 
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
-    private final ChatMemory chatMemory = MessageWindowChatMemory.builder()
-            .chatMemoryRepository(new InMemoryChatMemoryRepository())
-            .maxMessages(50)
-            .build();
 
     private static final String SYSTEM_TEMPLATE = """
         You are a banking customer support assistant. Answer the customer's question
@@ -33,7 +27,7 @@ public class RagChatService {
         {context}
         """;
 
-    public RagChatService(ChatClient.Builder builder, VectorStore vectorStore) {
+    public RagChatService(ChatClient.Builder builder, VectorStore vectorStore, ChatMemory chatMemory) {
         this.vectorStore = vectorStore;
         this.chatClient = builder
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
@@ -41,7 +35,6 @@ public class RagChatService {
     }
 
     public String chat(String conversationId, String userMessage) {
-        // 1. Retrieve relevant chunks
         List<Document> relevantDocs = vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(userMessage)
@@ -55,7 +48,6 @@ public class RagChatService {
 
         String systemPrompt = SYSTEM_TEMPLATE.replace("{context}", context);
 
-        // 2. Call the model with system context + conversation history
         String response = chatClient.prompt()
                 .system(systemPrompt)
                 .user(userMessage)
@@ -63,7 +55,6 @@ public class RagChatService {
                 .call()
                 .content();
 
-        // 3. Log for observability
         logInteraction(conversationId, userMessage, relevantDocs, response);
 
         return response;
