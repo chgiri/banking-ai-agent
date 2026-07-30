@@ -1,5 +1,6 @@
 package com.giri.ai.bankingfaq.service;
 
+import com.giri.ai.bankingfaq.service.ChatResult.SourceReference;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -34,7 +35,7 @@ public class RagChatService {
                 .build();
     }
 
-    public String chat(String conversationId, String userMessage) {
+    public ChatResult chat(String conversationId, String userMessage) {
         List<Document> relevantDocs = vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(userMessage)
@@ -55,9 +56,18 @@ public class RagChatService {
                 .call()
                 .content();
 
+        List<SourceReference> sources = relevantDocs.stream()
+                .map(d -> new SourceReference(
+                        (String) d.getMetadata().get("source"),
+                        (String) d.getMetadata().get("docType"),
+                        (Integer) d.getMetadata().get("chunk_index")
+                ))
+                .distinct()
+                .toList();
+
         logInteraction(conversationId, userMessage, relevantDocs, response);
 
-        return response;
+        return new ChatResult(response, sources);
     }
 
     private void logInteraction(String conversationId, String userMessage,
