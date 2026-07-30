@@ -5,8 +5,13 @@ import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,12 +19,28 @@ import java.util.UUID;
 public class PdfIngestionService {
 
     private final VectorStore vectorStore;
+    private final JdbcTemplate jdbcTemplate;
 
-    public PdfIngestionService(VectorStore vectorStore) {
+    public PdfIngestionService(VectorStore vectorStore, JdbcTemplate jdbcTemplate) {
         this.vectorStore = vectorStore;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public String ingest(Resource pdfResource, String originalFilename) {
+    public record IngestResult(String documentId, boolean alreadyExisted) {}
+
+    public IngestResult ingest(Resource pdfResource, String originalFilename, byte[] fileBytes) {
+        String contentHash = sha256Hex(fileBytes);
+
+        List<String> existingDocumentIds = jdbcTemplate.queryForList(
+                "SELECT DISTINCT metadata->>'documentId' FROM vector_store WHERE metadata->>'contentHash' = ?",
+                String.class,
+                contentHash
+        );
+
+        if (!existingDocumentIds.isEmpty()) {
+            return new IngestResult(existingDocumentIds.get(0), true);
+        }
+
         String documentId = UUID.randomUUID().toString();
 
         TikaDocumentReader reader = new TikaDocumentReader(pdfResource);
@@ -35,14 +56,24 @@ public class PdfIngestionService {
 
         List<Document> chunks = splitter.apply(rawDocuments);
 
-        // Tag every chunk with the documentId so retrieval can be scoped to this document only
         chunks.forEach(chunk -> {
             chunk.getMetadata().put("documentId", documentId);
             chunk.getMetadata().put("filename", originalFilename);
+            chunk.getMetadata().put("contentHash", contentHash);
         });
 
         vectorStore.add(chunks);
 
-        return documentId;
+        return new IngestResult(documentId, false);
+    }
+
+    private String sha256Hex(byte[] data) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(data);
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
     }
 }

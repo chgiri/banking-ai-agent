@@ -38,7 +38,9 @@ public class AdminApiKeyFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Only apply this filter to admin endpoints — everything else passes through untouched
-        return !request.getRequestURI().startsWith("/api/admin");
+        String uri = request.getRequestURI();
+        boolean isProtectedPath = uri.startsWith("/api/admin")
+                || uri.equals("/api/documents/upload");
+        return !isProtectedPath;
     }
 }
