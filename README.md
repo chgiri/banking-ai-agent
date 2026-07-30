@@ -41,20 +41,20 @@ Built as a hands-on, from-scratch introduction to GenAI integration in a Java/Sp
 
 ```
                      ┌─────────────────────┐
-   User Question ──► │   ChatController     │
+   User Question ──► │   ChatController    │
                      └──────────┬──────────┘
                                 │
                                 ▼
                      ┌─────────────────────┐
-                     │   RagChatService     │
+                     │   RagChatService    │
                      └──────────┬──────────┘
                                 │
               ┌─────────────────┼─────────────────┐
               ▼                 ▼                 ▼
      ┌────────────────┐ ┌───────────────┐ ┌──────────────────┐
-     │  VectorStore    │ │  ChatMemory   │ │    ChatClient     │
-     │  (pgvector)     │ │  (JDBC/       │ │  (Gemini chat)    │
-     │                 │ │   Postgres)   │ │                    │
+     │  VectorStore   │ │  ChatMemory   │ │    ChatClient    │
+     │  (pgvector)    │ │  (JDBC/       │ │  (Gemini chat)   │
+     │                │ │   Postgres)   │ │                  │
      └────────────────┘ └───────────────┘ └──────────────────┘
               │                                    │
               ▼                                    ▼
