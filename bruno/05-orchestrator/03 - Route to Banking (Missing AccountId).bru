@@ -1,0 +1,28 @@
+meta {
+  name: 03 - Route to Banking (Missing AccountId)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/assistant/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "bruno-orch-3",
+    "message": "Show my recent transactions"
+  }
+}
+
+docs {
+  Expect "routedTo": "BANKING" but with a message asking for accountId,
+  NOT an error and NOT a fabricated answer. Tests graceful missing-context
+  handling.
+}

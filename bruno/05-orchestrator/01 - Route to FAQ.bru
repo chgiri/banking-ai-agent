@@ -1,0 +1,26 @@
+meta {
+  name: 01 - Route to FAQ
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/assistant/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "bruno-orch-1",
+    "message": "What is the penalty for early FD withdrawal?"
+  }
+}
+
+docs {
+  Expect "routedTo": "FAQ" in the response, with sources from fd-policy.txt.
+}

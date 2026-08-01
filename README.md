@@ -1,6 +1,6 @@
 # Banking FAQ Assistant
 
-A GenAI-powered banking assistant built with Spring Boot and Spring AI, combining Retrieval-Augmented Generation (RAG) with tool calling for real account actions. It covers three progressively deeper capabilities: grounded Q&A over policy documents (RAG), on-demand document analysis (per-document scoped RAG), and account actions — balance checks, transactions, fund transfers — via tool calling with code-enforced authorization.
+A GenAI-powered banking assistant built with Spring Boot and Spring AI, combining Retrieval-Augmented Generation (RAG) with tool calling for real account actions, topped with a lightweight multi-agent-style orchestration layer. It covers four progressively deeper capabilities: grounded Q&A over policy documents (RAG), on-demand document analysis (per-document scoped RAG), account actions — balance checks, transactions, fund transfers — via tool calling with code-enforced authorization, and intent-based routing across all three.
 
 Built as a hands-on, from-scratch introduction to GenAI integration in a Java/Spring stack — using a banking domain deliberately, since it surfaces the grounding, citation, and authorization concerns that matter most in that industry rather than glossing over them.
 
@@ -23,6 +23,11 @@ Built as a hands-on, from-scratch introduction to GenAI integration in a Java/Sp
 - Initiates fund transfers through a two-step propose/confirm flow — no transfer executes without an explicit confirmation code
 - Account scoping is enforced in code, not left to the model's judgment: the model is never given account ID as a parameter it controls
 
+**Step 4 — Multi-Agent Orchestration**
+- A single entry point (`/api/assistant/chat`) classifies an incoming message's intent — FAQ, DOCUMENT, or BANKING — and routes it to the matching sub-agent from Steps 1–3
+- Falls back gracefully when required context is missing (e.g. a banking question with no `accountId`), asking for it rather than guessing or erroring
+- Defaults to the least-privileged path (FAQ) if classification comes back malformed, rather than defaulting to banking actions
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -35,32 +40,35 @@ Built as a hands-on, from-scratch introduction to GenAI integration in a Java/Sp
 | Conversation Memory | Spring AI JDBC Chat Memory (Postgres-backed) |
 | PDF Parsing | Apache Tika (via `spring-ai-tika-document-reader`) |
 | Tool Calling | Spring AI `@Tool` / `ChatClient.tools()` |
+| Orchestration | Single-shot LLM intent classification + Java `switch` dispatch |
 | Build Tool | Maven |
 
 ## Architecture
 
 ```
                      ┌─────────────────────┐
-   User Question ──► │   ChatController    │
+   User Question ──► │ AssistantController │  (Step 4 entry point)
                      └──────────┬──────────┘
                                 │
                                 ▼
                      ┌─────────────────────┐
-                     │   RagChatService    │
+                     │ OrchestratorService │
+                     │ (intent classifier) │
                      └──────────┬──────────┘
                                 │
               ┌─────────────────┼─────────────────┐
               ▼                 ▼                 ▼
      ┌────────────────┐ ┌───────────────┐ ┌──────────────────┐
+     │ RagChatService │ │DocumentQnaSvc │ │BankingActionsSvc │
+     │  (FAQ, Step 1) │ │  (Step 2)     │ │   (Step 3)       │
+     └───────┬────────┘ └───────┬───────┘ └────────┬─────────┘
+             │                  │                  │
+             ▼                  ▼                  ▼
+     ┌────────────────┐ ┌───────────────┐ ┌──────────────────┐
      │  VectorStore   │ │  ChatMemory   │ │    ChatClient    │
      │  (pgvector)    │ │  (JDBC/       │ │  (Gemini chat)   │
      │                │ │   Postgres)   │ │                  │
      └────────────────┘ └───────────────┘ └──────────────────┘
-              │                                    │
-              ▼                                    ▼
-     Retrieves 4 closest                  Sends system prompt
-     chunks by embedding                  + context + history
-     similarity                           + question to Gemini
 ```
 
 A question is embedded and matched against stored document chunks by semantic similarity (cosine distance via pgvector), the retrieved text is injected into the system prompt as grounding context, prior conversation turns are pulled in automatically via the memory advisor, and the model generates a response constrained to only what was retrieved.
@@ -68,6 +76,8 @@ A question is embedded and matched against stored document chunks by semantic si
 **Document Q&A** follows the same retrieval → context → generation flow, with one addition: every stored chunk is tagged with a `documentId`, and retrieval is filtered to only that ID via `SearchRequest.filterExpression(...)` — so one uploaded document's content can never leak into another's answers.
 
 **Banking Actions Assistant** replaces the retrieval step with a tool-calling loop: instead of grounding in retrieved text, the model is given a small set of `@Tool`-annotated methods (`getBalance`, `listRecentTransactions`, `proposeTransfer`, `confirmTransfer`) bound to a specific account ID at request time. The model decides when to invoke a tool; the account ID itself is never a parameter it controls.
+
+**Multi-Agent Orchestration** sits in front of all three: a single, tool-free, memory-free LLM call classifies the incoming message into `FAQ`, `DOCUMENT`, or `BANKING`, and `OrchestratorService` dispatches to the corresponding existing service. It is a **router**, not agents that reason or collaborate with each other — worth naming precisely rather than overstating (see Design Decisions below).
 
 ## Getting Started
 
@@ -216,6 +226,33 @@ Other example messages for the same endpoint:
 - `"Transfer 500 to ACC1002"` → returns a confirmation code, does not move funds
 - `"Confirm CONF-XXXXXXXX"` → executes the transfer only if that code matches a pending proposal
 
+### Assistant — Orchestrated Entry Point (Step 4)
+
+```
+POST /api/assistant/chat
+Content-Type: application/json
+
+{
+  "conversationId": "orch-1",
+  "accountId": "ACC1001",
+  "documentId": "a1b2c3d4-...",
+  "message": "What is my balance?"
+}
+```
+
+`accountId` and `documentId` are optional — include whichever is relevant to the message, or omit both for a plain FAQ question. `conversationId` is also optional; if omitted, a fresh one is generated per request (meaning no conversation memory carries over for that call — see Known Limitations).
+
+**Response:**
+```json
+{
+  "answer": "Your current balance is 45230.50",
+  "routedTo": "BANKING",
+  "sources": []
+}
+```
+
+`routedTo` reports which sub-agent handled the request (`FAQ`, `DOCUMENT`, or `BANKING`) — useful for debugging misclassifications. If a `BANKING` or `DOCUMENT` intent is detected but the required `accountId`/`documentId` wasn't provided, the response asks for it instead of guessing or erroring.
+
 ## Configuration Reference
 
 Key properties in `application.properties`:
@@ -246,6 +283,9 @@ spring.ai.chat.memory.repository.jdbc.initialize-schema=always
 - **Duplicate PDF uploads are detected by content, not filename.** A SHA-256 hash of the file bytes is checked before ingestion, since filenames are an unreliable way to detect "this is the same file."
 - **Account scoping is enforced in code, not trusted to the model.** The Banking Actions Assistant binds the current account ID once, at tool-object construction time — it is never exposed as a parameter the model can set. A request can only ever act on the account it was explicitly scoped to, regardless of how a message is phrased.
 - **Transfers are a two-step, code-enforced flow, not a prompt-engineered promise.** `proposeTransfer` returns a confirmation code without moving any money; `confirmTransfer` only executes if a matching pending proposal exists. The system prompt asks the model to always confirm first, but the actual safety boundary is the two-tool split in `AccountService` — verified deliberately by testing adversarial phrasings that try to skip straight to a fabricated confirmation code.
+- **The orchestrator is a router, not "true" multi-agent collaboration — described that way deliberately.** A single upfront LLM call classifies intent, then a Java `switch` dispatches to one of three fixed handlers. There's no back-and-forth between agents, no agent invoking another agent, no shared planning. This is a legitimate and common real-world pattern (often called a triage or supervisor pattern), but it's a materially different thing from agents that reason and collaborate — worth being precise about rather than overselling.
+- **Misclassification defaults to the least-privileged path.** If the intent classifier returns something unrecognized or malformed, `OrchestratorService` defaults to `FAQ` rather than `BANKING` — a misrouted FAQ question just gives an unhelpful answer, whereas a misrouted banking question would be a materially worse failure mode.
+- **A missing `conversationId` gets a freshly generated one, not a rejected request.** Trades away conversation memory for that call in exchange for not crashing — a deliberate usability choice, not an oversight (see Known Limitations for the trade-off this implies).
 - **Observability from day one.** Every FAQ chat interaction logs the retrieved chunks and their sources, making it possible to debug *why* a given answer was produced.
 
 ## Known Limitations (Honest Scope)
@@ -255,22 +295,34 @@ This is a learning/portfolio project, and some gaps are intentional rather than 
 - **Admin/upload endpoint security is minimal.** A single static API key checked via a servlet filter — sufficient to prevent casual/accidental access, but lacking rate limiting, key rotation, or audit logging. A production system would use Spring Security with role-based access control.
 - **JDBC chat memory doesn't persist tool-call messages.** This affects the Banking Actions Assistant specifically: `JdbcChatMemoryRepository` only stores plain user/assistant text, silently dropping the tool request/response messages generated during balance checks and transfers. Plain conversational turns in that same service still persist correctly across restarts — only the tool-invocation parts don't. A newer community project, Spring AI Session, addresses this with full tool-message support, but was deliberately not adopted here to avoid pulling in a pre-1.0 dependency with a different integration model partway through the build.
 - **Pending transfer confirmation codes aren't scoped to the proposing account.** `AccountService` stores pending transfers in a single map keyed only by confirmation code, not by account ID. This means a code generated for one account's transfer could theoretically be confirmed from a different account's session. Identified during adversarial testing of the propose/confirm flow; a production fix would bind the confirmation code to the originating account and reject mismatches.
+- **The orchestrator is a router, not collaborating agents.** See Design Decisions above — worth not overstating in interviews or documentation as more sophisticated multi-agent architecture than it is.
+- **Omitting `conversationId` from `/api/assistant/chat` silently forfeits conversation memory** for that call, rather than rejecting the request. Reasonable as a default, but worth surfacing to any real caller that depends on multi-turn context.
 - **No re-ranking or hybrid search.** Retrieval is pure vector similarity; a production system might combine this with keyword search or a re-ranking step for higher precision.
 - **Single-tenant.** No concept of per-customer document scoping or access control on retrieval.
-- **No real authentication.** The Banking Actions Assistant takes `accountId` directly in the request body as a stand-in for what a real system would derive from a session or JWT after login.
+- **No real authentication.** The Banking Actions Assistant (and the orchestrator, by extension) takes `accountId` directly in the request body as a stand-in for what a real system would derive from a session or JWT after login.
 
-## Learning Path (All Three Steps Complete)
+## Learning Path (All Four Steps Complete)
 
 This project was built as a progressive GenAI learning path:
 
 1. **Banking FAQ Assistant** — RAG fundamentals: embeddings, vector search, grounding, conversation memory
 2. **Document Q&A System** — real-world PDF parsing (Apache Tika), chunking strategy on longer documents, per-document metadata scoping via filter expressions
 3. **Banking Actions Assistant** — tool calling with code-enforced account scoping and a two-step propose/confirm pattern for irreversible actions like fund transfers
+4. **Multi-Agent Orchestration** — LLM-based intent classification and routing across all three prior services, with graceful handling of missing context and misclassification
+
+## Related Projects
+
+- **[`banking-mcp-server`](../banking-mcp-server)** — a standalone Model Context Protocol (MCP) server that exposes this app's FAQ, document Q&A, and document upload capabilities to MCP-compatible AI clients (Claude Desktop, Claude Code, MCP Inspector), calling this app's REST API over HTTP rather than reaching into its internal Spring beans.
+
+## Testing
+
+A full [Bruno](https://www.usebruno.com/) collection covering every endpoint and edge case exercised during development — grounding, memory, the no-hallucination test, admin auth, document scoping, the propose/confirm transfer flow, adversarial security tests, and all orchestrator routing paths — is available alongside this project. See the collection's own README for setup and running order; a few chained requests (document upload → scoped Q&A, propose → confirm transfer) require copying an ID or code between requests.
 
 ## Possible Next Directions
 
 - A fraud/anomaly detection assistant or loan pre-qualification flow, reusing the same RAG + tool-calling patterns in a new banking domain problem
-- Multi-agent orchestration — a triage agent routing between specialized sub-agents, a step up in complexity from single-agent tool calling
+- Evolving the orchestrator from a single-shot router into genuine multi-agent collaboration — e.g. letting it use tool calling itself to dynamically choose and sequence sub-agents, rather than classifying intent once upfront
+- Exposing the Banking Actions tools via MCP, solving the account-scoping-via-transport-context design gap noted in `banking-mcp-server`'s own README
 - Automated evaluation/regression testing for RAG answer quality — a genuine differentiator most portfolio projects skip entirely
 - Fixing the pending-transfer account-scoping gap identified above
 

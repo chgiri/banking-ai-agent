@@ -1,0 +1,21 @@
+meta {
+  name: 02 - Ingest Without API Key (Should Fail 401)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/admin/ingest
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  file: @file()
+  docType: loan-fee-policy
+}
+
+docs {
+  Negative test: deliberately omits the X-Admin-Api-Key header.
+  Expected: 401 Unauthorized, proving AdminApiKeyFilter is actually enforced.
+}

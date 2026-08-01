@@ -1,0 +1,30 @@
+meta {
+  name: 04 - Cross-Document Scoping Test (Should Not Leak)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/documents/{{wrong_document_id}}/ask
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "question": "What is the interest rate mentioned in this agreement?"
+  }
+}
+
+docs {
+  Upload TWO different PDFs first. Set "document_id" (used in request 03)
+  to Document A's ID, and set "wrong_document_id" here to Document B's ID.
+
+  Ask the same question against the wrong document — should return "no
+  content found" / an unrelated answer, NEVER Document A's actual content.
+  This is the real proof that per-document metadata filtering works.
+}

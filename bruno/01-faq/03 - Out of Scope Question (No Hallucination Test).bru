@@ -1,0 +1,28 @@
+meta {
+  name: 03 - Out of Scope Question (No Hallucination Test)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "bruno-faq-2",
+    "message": "What is your policy on car loans?"
+  }
+}
+
+docs {
+  Most important RAG test: no car loan policy was ever ingested. The
+  assistant should decline / say it doesn't have that information,
+  NOT invent a plausible-sounding policy. Verifies grounding is working.
+}

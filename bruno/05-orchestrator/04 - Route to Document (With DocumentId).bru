@@ -1,0 +1,28 @@
+meta {
+  name: 04 - Route to Document (With DocumentId)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/assistant/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "bruno-orch-4",
+    "documentId": "{{document_id}}",
+    "message": "What is the interest rate in this agreement?"
+  }
+}
+
+docs {
+  Set "document_id" to a real uploaded document's ID (see 03-documents
+  folder). Expect "routedTo": "DOCUMENT" with sources scoped to that doc.
+}

@@ -1,0 +1,6 @@
+{
+  "version": "1",
+  "name": "Banking FAQ Assistant",
+  "type": "collection",
+  "ignore": ["node_modules", ".git"]
+}

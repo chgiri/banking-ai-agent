@@ -1,0 +1,30 @@
+meta {
+  name: 06 - Ambiguous Message (Classifier Edge Case)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/api/assistant/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "bruno-orch-6",
+    "accountId": "ACC1001",
+    "message": "Can you tell me about transfer fees?"
+  }
+}
+
+docs {
+  Deliberately ambiguous: could reasonably be FAQ (fee policy) or BANKING
+  (mentions "transfer"). Not a pass/fail test — check "routedTo" to see
+  which way the classifier leans, and whether the category descriptions
+  in OrchestratorService.classify() need tightening.
+}

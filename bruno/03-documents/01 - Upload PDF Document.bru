@@ -1,0 +1,31 @@
+meta {
+  name: 01 - Upload PDF Document
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/documents/upload
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  X-Admin-Api-Key: {{admin_api_key}}
+}
+
+body:multipart-form {
+  file: @file()
+}
+
+docs {
+  Upload a PDF (e.g. a sample loan agreement). In Bruno's UI, click the
+  "file" field and select a local .pdf file before sending.
+
+  Response includes a documentId — copy it into the "document_id"
+  variable in the Local environment, or paste it manually into the
+  requests below, to chain the following requests.
+
+  Uploading the exact same file twice should return 200 OK with the
+  SAME documentId (content-hash dedup), not a new one.
+}

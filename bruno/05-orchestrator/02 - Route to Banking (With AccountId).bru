@@ -1,0 +1,27 @@
+meta {
+  name: 02 - Route to Banking (With AccountId)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/assistant/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "bruno-orch-2",
+    "accountId": "ACC1001",
+    "message": "What is my balance?"
+  }
+}
+
+docs {
+  Expect "routedTo": "BANKING" with an actual balance answer.
+}

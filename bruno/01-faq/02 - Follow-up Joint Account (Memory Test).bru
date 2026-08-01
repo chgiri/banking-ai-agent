@@ -1,0 +1,28 @@
+meta {
+  name: 02 - Follow-up Joint Account (Memory Test)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "bruno-faq-1",
+    "message": "What about a joint account?"
+  }
+}
+
+docs {
+  Run AFTER "01 - Ask FD Withdrawal Penalty" using the SAME conversationId.
+  Verifies conversation memory: the assistant should understand "joint
+  account" still refers to FD withdrawal from the prior turn.
+}

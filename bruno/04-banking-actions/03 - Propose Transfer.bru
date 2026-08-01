@@ -1,0 +1,28 @@
+meta {
+  name: 03 - Propose Transfer
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/banking-actions/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "accountId": "ACC1001",
+    "conversationId": "bruno-banking-1",
+    "message": "Transfer 500 to ACC1002"
+  }
+}
+
+docs {
+  Should return a confirmation code (e.g. CONF-XXXXXXXX) WITHOUT moving
+  any money yet. Copy the code from the response into request 04.
+}

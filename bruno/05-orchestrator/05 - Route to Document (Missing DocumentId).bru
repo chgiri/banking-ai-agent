@@ -1,0 +1,27 @@
+meta {
+  name: 05 - Route to Document (Missing DocumentId)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/assistant/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "bruno-orch-5",
+    "message": "What does the loan agreement say about prepayment?"
+  }
+}
+
+docs {
+  Expect "routedTo": "DOCUMENT" but with a message asking for documentId,
+  since none was provided.
+}

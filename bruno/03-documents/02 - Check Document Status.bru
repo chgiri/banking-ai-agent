@@ -1,0 +1,18 @@
+meta {
+  name: 02 - Check Document Status
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/documents/{{document_id}}
+  body: none
+  auth: none
+}
+
+docs {
+  Set the "document_id" environment variable (or edit the URL directly)
+  to the documentId returned from "01 - Upload PDF Document".
+
+  Returns filename + chunkCount if found, 404 if not.
+}

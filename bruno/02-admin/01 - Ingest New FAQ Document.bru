@@ -1,0 +1,29 @@
+meta {
+  name: 01 - Ingest New FAQ Document
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/admin/ingest
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  X-Admin-Api-Key: {{admin_api_key}}
+}
+
+body:multipart-form {
+  file: @file()
+  docType: loan-fee-policy
+}
+
+docs {
+  Adds a new .txt FAQ document at runtime without restarting the app.
+  In Bruno's UI, click the "file" field and select a local .txt file
+  (e.g. a new-loan-fee-policy.txt with sample content) before sending.
+
+  Expect 401 Unauthorized if the X-Admin-Api-Key header is missing or wrong —
+  useful as its own negative test.
+}
