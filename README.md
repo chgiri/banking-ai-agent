@@ -1,4 +1,4 @@
-# Banking FAQ Assistant
+# Banking AI Agent
 
 A GenAI-powered banking assistant built with Spring Boot and Spring AI, combining Retrieval-Augmented Generation (RAG) with tool calling for real account actions, topped with a lightweight multi-agent-style orchestration layer. It covers four progressively deeper capabilities: grounded Q&A over policy documents (RAG), on-demand document analysis (per-document scoped RAG), account actions — balance checks, transactions, fund transfers — via tool calling with code-enforced authorization, and intent-based routing across all three.
 
@@ -6,7 +6,7 @@ Built as a hands-on, from-scratch introduction to GenAI integration in a Java/Sp
 
 ## What It Does
 
-**Step 1 — Banking FAQ Assistant**
+**Step 1 — FAQ Assistant (RAG)**
 - Answers customer questions (FD withdrawal penalties, account fees, loan FAQs) using only the content of ingested policy documents
 - Explicitly declines to answer when retrieved context doesn't cover the question, rather than hallucinating a plausible-sounding policy
 - Remembers conversation context across turns — and across app restarts, since memory is persisted to Postgres
@@ -157,7 +157,7 @@ On first startup, the app ingests three sample banking documents (FD withdrawal 
 
 ## API Endpoints
 
-### Chat — Banking FAQ Assistant
+### Chat — FAQ Assistant
 
 ```
 POST /api/chat
@@ -376,7 +376,7 @@ This is a learning/portfolio project, and some gaps are intentional rather than 
 
 This project was built as a progressive GenAI learning path:
 
-1. **Banking FAQ Assistant** — RAG fundamentals: embeddings, vector search, grounding, conversation memory
+1. **FAQ Assistant** — RAG fundamentals: embeddings, vector search, grounding, conversation memory
 2. **Document Q&A System** — real-world PDF parsing (Apache Tika), chunking strategy on longer documents, per-document metadata scoping via filter expressions
 3. **Banking Actions Assistant** — tool calling with code-enforced account scoping and a two-step propose/confirm pattern for irreversible actions like fund transfers
 4. **Multi-Agent Orchestration (Router)** — LLM-based intent classification and routing across all three prior services, with graceful handling of missing context and misclassification

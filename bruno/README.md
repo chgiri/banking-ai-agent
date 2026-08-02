@@ -1,4 +1,4 @@
-# Banking FAQ Assistant — Bruno Collection
+# Banking AI Agent — Bruno Collection
 
 Every unique test case exercised during development, organized to match the
 project's build order: FAQ RAG → Admin ingestion → Document Q&A →
@@ -10,7 +10,7 @@ Banking Actions (including adversarial security tests) → Orchestrator
 1. Open this folder in [Bruno](https://www.usebruno.com/)
 2. Select the **Local** environment (top-right in Bruno)
 3. Edit these variables in the Local environment before running anything:
-   - `admin_api_key` — must match `ADMIN_API_KEY` in `banking-faq-assistant`'s `.env`
+   - `admin_api_key` — must match `ADMIN_API_KEY` in `banking-ai-agent`'s `.env`
    - `document_id` / `wrong_document_id` — fill in after running the upload
      request in `03-documents`, needed for the document-scoped tests
 
