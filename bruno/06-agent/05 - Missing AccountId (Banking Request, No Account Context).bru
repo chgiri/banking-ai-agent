@@ -1,0 +1,29 @@
+meta {
+  name: 05 - Missing AccountId (Banking Request, No Account Context)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/agent/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "agent-test-5",
+    "message": "What is my balance?"
+  }
+}
+
+docs {
+  No accountId provided at all. performBankingAction's own null-check
+  should kick in here (not a model guess) and return a plain-language
+  explanation that no account context is available - verify the
+  response does NOT fabricate a balance.
+}

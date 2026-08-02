@@ -2,7 +2,8 @@
 
 Every unique test case exercised during development, organized to match the
 project's build order: FAQ RAG → Admin ingestion → Document Q&A →
-Banking Actions (including adversarial security tests) → Orchestrator.
+Banking Actions (including adversarial security tests) → Orchestrator
+(router) → Agentic Orchestrator (true tool-calling agent).
 
 ## Setup
 
@@ -21,7 +22,8 @@ Banking Actions (including adversarial security tests) → Orchestrator.
 | `02-admin` | Runtime FAQ document ingestion, API key auth (positive + negative) |
 | `03-documents` | PDF upload, dedup, status check, scoped Q&A, cross-document leak test |
 | `04-banking-actions` | Balance/transactions, propose/confirm transfer flow, adversarial security tests |
-| `05-orchestrator` | Multi-agent-style routing across all three sub-agents, missing-context handling, an intentionally ambiguous classification case |
+| `05-orchestrator` | Step 4 router: single-path intent classification across all three sub-agents, missing-context handling, an intentionally ambiguous classification case |
+| `06-agent` | Step 5 true agentic orchestrator: multi-tool reasoning in one request, the same account-scoping security test re-verified under a more autonomous architecture, natural missing-context clarification |
 
 ## Running Order
 
@@ -37,6 +39,13 @@ Most requests are self-contained, but a few must run in sequence
 - **04-banking-actions adversarial tests (05, 06)**: run these, then run
   `07 - Check Balance After Attacks` to verify no money actually moved —
   the response text alone is never sufficient proof.
+- **06-agent, request 01**: the flagship comparison test. Run the identical
+  message through `05-orchestrator` against `/api/assistant/chat` first,
+  then this request against `/api/agent/chat` — the router can only answer
+  one half of the question, the agent answers both by calling two tools in
+  one request. Watch the Spring Boot console for `[Agent] ...` log lines
+  to confirm which tool(s) actually fired, rather than trusting the
+  response text alone.
 
 ## Not Covered Here
 

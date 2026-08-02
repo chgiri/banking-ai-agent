@@ -1,0 +1,30 @@
+meta {
+  name: 04 - Missing DocumentId (Natural Clarification)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/agent/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "agent-test-4",
+    "message": "What does my loan agreement say about prepayment?"
+  }
+}
+
+docs {
+  No documentId provided. Unlike the Step 4 router's hardcoded fallback
+  message, the agentic version's tool description instructs the model
+  to ask the user for the documentId conversationally rather than
+  guessing - this tests that the model actually does so, as a genuine
+  reasoning behavior rather than a hardcoded string.
+}

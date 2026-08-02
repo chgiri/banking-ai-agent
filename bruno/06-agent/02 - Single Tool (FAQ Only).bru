@@ -1,0 +1,29 @@
+meta {
+  name: 02 - Single Tool (FAQ Only)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/agent/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "agent-test-2",
+    "message": "What is the penalty for early FD withdrawal?"
+  }
+}
+
+docs {
+  Baseline: a single-topic question should still work correctly and
+  efficiently through the agentic endpoint, calling only
+  answerBankingFaq - confirms the agent doesn't call unnecessary tools
+  just because it can.
+}

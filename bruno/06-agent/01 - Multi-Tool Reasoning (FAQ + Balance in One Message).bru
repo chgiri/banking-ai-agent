@@ -1,0 +1,43 @@
+meta {
+  name: 01 - Multi-Tool Reasoning (FAQ + Balance in One Message)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/agent/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "conversationId": "agent-test-1",
+    "accountId": "ACC1001",
+    "message": "What is the penalty for early FD withdrawal, and also what is my current balance?"
+  }
+}
+
+docs {
+  THE flagship test for this endpoint. This is the concrete proof of the
+  difference between /api/agent/chat and the Step 4 router
+  (/api/assistant/chat): a single message that needs BOTH the FAQ agent
+  and the banking-actions agent to be fully answered.
+
+  Run the identical message through 05-orchestrator's requests against
+  /api/assistant/chat for direct comparison — the router can only ever
+  pick ONE of FAQ or BANKING, never both.
+
+  To verify this worked (not just that a plausible-sounding answer came
+  back), watch the Spring Boot application console while this request
+  runs. You should see BOTH of these log lines appear:
+    [Agent] answerBankingFaq called: ...
+    [Agent] performBankingAction called: ...
+  If only one appears, the model chose not to call both tools for this
+  phrasing - worth noting, not necessarily a bug, but not the intended
+  demonstration either.
+}
