@@ -6,6 +6,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,6 +33,8 @@ public class DocumentQnaService {
         this.chatClient = builder.build();
     }
 
+    @Cacheable(cacheNames = "documentQna",
+            key = "#documentId + '::' + T(com.giri.ai.bankagent.service.DocumentQnaService).normalizeForCacheKey(#question)")
     public ChatResult ask(String documentId, String question) {
         FilterExpressionBuilder b = new FilterExpressionBuilder();
 
@@ -83,5 +86,21 @@ public class DocumentQnaService {
             ---
             """,
                 userMessage, response);
+    }
+
+    /**
+     * Used only to compute the cache key in @Cacheable above — never applied to the
+     * actual question sent to vector search or the LLM. Catches the common cases of
+     * "same question, different punctuation/casing/whitespace" so they share a cache
+     * entry, without touching what the model or retrieval actually receives.
+     */
+    public static String normalizeForCacheKey(String question) {
+        if (question == null) {
+            return "";
+        }
+        return question
+                .trim()
+                .toLowerCase()
+                .replaceAll("[\\p{Punct}\\s]+$", ""); // strip trailing punctuation/whitespace
     }
 }

@@ -1,0 +1,43 @@
+meta {
+  name: 05 - Cache Hit (Punctuation Casing Variant)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/documents/{{document_id}}/ask
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "question": " what kind of insurance do I need..."
+  }
+}
+
+docs {
+  Run AFTER "03 - Ask About Document" (same document_id, same underlying
+  question, different casing/punctuation — lowercase, no trailing "?").
+  
+  This verifies DocumentQnaService's caching: the two questions normalize
+  to the same cache key (via normalizeForCacheKey), so this request should
+  be served from cache rather than triggering a new LLM/vector-search call.
+  
+  How to verify (response content alone isn't proof):
+  1. Watch the Spring Boot application console while sending this request.
+  2. The "Question: ... / Answer: ..." log line only prints on a genuine
+     cache MISS (logInteraction runs inside the method body, which the
+     caching proxy skips entirely on a hit).
+  3. If nothing prints to the console for this request, the cache hit,
+     which is the actual proof — not just that a plausible answer came back.
+  
+  Also worth noting: the response should still be answering the ORIGINAL
+  document content correctly, since normalization only affects the cache
+  key — the raw question text is still what's used for retrieval and
+  generation, unaffected by this caching layer.
+}
