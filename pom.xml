@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.giri.ai</groupId>
-	<artifactId>banking-faq-assistant</artifactId>
+	<artifactId>banking-ai-agent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>banking-faq-assistant</name>
+	<name>banking-ai-agent</name>
 
 	<properties>
 		<java.version>21</java.version>
